@@ -1,0 +1,57 @@
+---
+project: training
+kind: PIPELINE
+name: Update OpenCart Deployment
+enabled: true
+concurrency: 10
+ciWorkspace:
+  endpoint: ''
+  image: ''
+  registry: ''
+  path: ''
+  cache:
+  - ''
+stageOrder:
+- Update AWS Deployment
+stages:
+  Update AWS Deployment:
+    taskOrder:
+    - Delete Current AWS Deployment
+    - Deploy AWS Deployment
+    - Update OpenCart Theme
+    tasks:
+      Update OpenCart Theme:
+        type: SSH
+        input:
+          privatekey: ''
+          password: s2enc~QLJhR9ZEpy6UAgaHLj+mGA==
+          workingDirectory: ''
+          environmentVariables: {
+            }
+          host: ${Update AWS Deployment.Deploy AWS Deployment.output.deploymentDetails.resources.mysql.address}
+          arguments: [
+            ]
+          passphrase: ''
+          script: |-
+            git clone https://github.com/mcclanc/oc-electro-theme.git
+            cd oc-electro-theme
+            mysql -u ocuser opencart < cmd.txt
+          username: demouser
+      Delete Current AWS Deployment:
+        type: Blueprint
+        input:
+          _deploymentFlag: false
+          action: DeleteDeployment
+          deploymentName: OC-AWS Environment
+      Deploy AWS Deployment:
+        type: Blueprint
+        input:
+          blueprint: open-cart-demo-cloud-select
+          action: CreateDeployment
+          deploymentName: '`OC-AWS v2 Environment'
+          version: 1.1.1
+          parameters: {
+            pass: VMware1!,
+            user: demouser,
+            placement: AWS
+          }
